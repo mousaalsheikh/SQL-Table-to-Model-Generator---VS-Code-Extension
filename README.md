@@ -1,6 +1,8 @@
 # SQL Table to Model Generator
 
-SQL Table to Model Generator is a VS Code extension for developers who want to paste a `CREATE TABLE` script from SQL Server, MySQL, or Oracle and immediately generate model output for:
+**SQL Table to Model Generator** is a VS Code extension by **[Kenzi.ai](https://kenzi.ai)** that converts `CREATE TABLE` scripts from SQL Server, MySQL, and Oracle into model code.
+
+Supported outputs:
 
 - C#
 - TypeScript
@@ -8,34 +10,43 @@ SQL Table to Model Generator is a VS Code extension for developers who want to p
 - Python
 - Java
 
-It also supports property naming styles:
+Supported naming styles:
 
 - Keep original
 - `PascalCase`
 - `camelCase`
 - `snake_case`
 
-## Why this name
+## Features
 
-`SQL Table to Model Generator` is explicit, searchable, and aligned with how developers search the marketplace:
+- Paste a `CREATE TABLE` statement and generate model output in seconds
+- Supports SQL Server, MySQL, and Oracle table scripts
+- Generates one output target at a time with the appropriate VS Code language mode
+- Can also produce a combined Markdown document with all generated targets
+- Lets you normalize property names to match your project conventions
 
-- `sql model`
-- `sql to c# class`
-- `sql to typescript interface`
-- `sql ddl generator`
+## Installation
 
-The extension name is short enough to remember and specific enough to rank for intent-based searches.
+Install from the VS Code Marketplace:
+
+1. Open **Extensions** in VS Code
+2. Search for `SQL Table to Model Generator`
+3. Select the extension published by `kenzi-ai`
+4. Click **Install**
 
 ## Usage
 
-1. Run `SQL Table to Model Generator: Generate Models` from the Command Palette.
-2. Paste your `CREATE TABLE` script into the `Table Script` textarea.
-3. Choose the `Database Type`.
-4. Choose the `Naming Option`.
-5. Choose the `Output Language`.
-6. Generate and review either a single output document or the combined Markdown document.
+1. Open the Command Palette
+2. Run `SQL Table to Model Generator: Generate Models`
+3. Paste your `CREATE TABLE` script into the `Table Script` field
+4. Choose the `Database Type`
+5. Choose the `Naming Option`
+6. Choose the `Output Language`
+7. Generate either a single model output or a combined Markdown document
 
-## Example input
+You can also launch the generator from the extension sidebar or editor actions when working with SQL files.
+
+## Example Input
 
 ```sql
 CREATE TABLE dbo.CustomerOrders (
@@ -46,66 +57,66 @@ CREATE TABLE dbo.CustomerOrders (
 );
 ```
 
-## Output targets
+## Example Output
 
-- C# class
-- TypeScript interface
-- JSON sample
-- Python dataclass
-- Java class
+### C#
 
-You can generate one target at a time with the correct VS Code language mode, or keep the combined Markdown output with every target section.
-
-## Development
-
-```bash
-npm install
-npm run build
+```csharp
+public class CustomerOrders
+{
+    public int OrderId { get; set; }
+    public string CustomerName { get; set; } = string.Empty;
+    public decimal? TotalAmount { get; set; }
+    public DateTime CreatedAt { get; set; }
+}
 ```
 
-Press `F5` in VS Code to launch the Extension Development Host.
+### TypeScript
 
-## Manual testing in VS Code
-
-There are currently no automated tests in this repo. Test the extension manually:
-
-1. Open this project in VS Code.
-2. Press `F5`.
-3. A new `Extension Development Host` window will open and, in development mode, the generator panel opens automatically for manual testing.
-4. In that new window, press `Cmd+Shift+P` on macOS or `Ctrl+Shift+P` on Windows/Linux.
-5. Run `SQL Table to Model Generator: Generate Models`.
-6. Paste a `CREATE TABLE` script into the textarea, or use the built-in default SQL already shown in the generator.
-7. Pick a database type and naming style.
-8. Confirm a new Markdown tab opens with generated C#, TypeScript, JSON, Python, and Java output.
-
-If `F5` opens what looks like an empty window, that is still the correct debug host. Run the command from the Command Palette in that new window, or right-click inside the sample SQL editor and use the context menu command.
-
-## Publish to VS Code Marketplace
-
-1. Create a publisher in Azure DevOps / Visual Studio Marketplace.
-2. Update the `publisher` field in `package.json` if needed.
-3. Create a Personal Access Token with Marketplace publish rights.
-4. Login once:
-
-```bash
-npx @vscode/vsce login <publisher-name>
+```ts
+export interface CustomerOrders {
+  orderId: number;
+  customerName: string;
+  totalAmount?: number | null;
+  createdAt: string;
+}
 ```
 
-5. Package locally:
+### Python
 
-```bash
-npm run package
+```python
+from dataclasses import dataclass
+from typing import Optional
+
+@dataclass
+class CustomerOrders:
+    order_id: int
+    customer_name: str
+    total_amount: Optional[float] = None
+    created_at: str
 ```
 
-6. Publish:
+## Supported Inputs
 
-```bash
-npm run publish:marketplace
-```
+The parser is designed for common `CREATE TABLE` patterns, including:
+
+- Standard column definitions
+- Nullability
+- Primary key markers
+- Common SQL data types in SQL Server, MySQL, and Oracle
+
+## Current Limitations
+
+- Column constraints beyond nullability and primary keys are ignored in generated models
+- Foreign keys, indexes, checks, triggers, and other schema-level objects are not represented
+- Very complex or vendor-specific DDL variants may not parse correctly yet
+- Type mapping relies on local extension rules and fallback type families
 
 ## Notes
 
-- The generator uses local in-repo type maps plus type-family fallbacks for SQL Server, MySQL, and Oracle.
-- The parser targets common `CREATE TABLE` patterns for SQL Server, MySQL, and Oracle.
-- Column constraints beyond nullability and primary keys are ignored in generated models.
-- Complex DDL variants can be added incrementally as needed.
+- This extension is intended to speed up model scaffolding, not replace schema review
+- Generated output should still be validated against your project conventions and runtime requirements
+
+## License
+
+[MIT](LICENSE)

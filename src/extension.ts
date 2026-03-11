@@ -428,10 +428,6 @@ async function handleGenerateRequest(panel: vscode.WebviewPanel, request: Genera
   }
 }
 
-function isScratchDocument(document: vscode.TextDocument | undefined): boolean {
-  return Boolean(document && /(^|[\\/])scratch\.sql$/i.test(document.fileName));
-}
-
 export function activate(context: vscode.ExtensionContext): void {
   const viewProvider = new GeneratorViewProvider();
   const disposable = vscode.commands.registerCommand('sqlModelForge.generateModels', async () => {
@@ -465,40 +461,6 @@ export function activate(context: vscode.ExtensionContext): void {
 
   context.subscriptions.push(disposable);
   context.subscriptions.push(vscode.window.registerTreeDataProvider('sqlModelForge.startView', viewProvider));
-
-  if (context.extensionMode === vscode.ExtensionMode.Development) {
-    let hasOpenedDevPanel = false;
-
-    const openDevPanel = async (): Promise<void> => {
-      if (hasOpenedDevPanel) {
-        return;
-      }
-
-      hasOpenedDevPanel = true;
-
-      if (isScratchDocument(vscode.window.activeTextEditor?.document)) {
-        await vscode.commands.executeCommand('workbench.action.closeActiveEditor');
-      }
-
-      await vscode.commands.executeCommand('sqlModelForge.generateModels');
-    };
-
-    const maybeBootstrapFromScratch = (): void => {
-      if (!hasOpenedDevPanel && isScratchDocument(vscode.window.activeTextEditor?.document)) {
-        void openDevPanel();
-      }
-    };
-
-    context.subscriptions.push(
-      vscode.window.onDidChangeActiveTextEditor(() => {
-        maybeBootstrapFromScratch();
-      })
-    );
-
-    setTimeout(() => {
-      maybeBootstrapFromScratch();
-    }, 10);
-  }
 }
 
 export function deactivate(): void {}

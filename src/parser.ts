@@ -101,17 +101,180 @@ function parsePrimaryKeyColumns(lines: string[]): Set<string> {
   const primaryKeys = new Set<string>();
 
   for (const line of lines) {
-    const match = line.match(/primary\s+key\s*\(([^)]+)\)/i);
+    const match = line.match(/primary\s+key(?:\s+\w+)*\s*\(([^)]+)\)/i);
     if (!match) {
       continue;
     }
 
     for (const key of match[1].split(',')) {
-      primaryKeys.add(normalizeIdentifier(key));
+      const normalizedKey = normalizeIdentifier(key.replace(/\basc\b|\bdesc\b/gi, '').trim());
+      if (normalizedKey) {
+        primaryKeys.add(normalizedKey);
+      }
     }
   }
 
   return primaryKeys;
+}
+
+function normalizeTypeName(value: string): string {
+  return value
+    .replace(/\[([^\]]+)\]/g, '$1')
+    .replace(/`([^`]+)`/g, '$1')
+    .replace(/"([^"]+)"/g, '$1')
+    .replace(/\s+identity\s*\([^)]*\)/gi, '')
+    .replace(/\s+generated(?:\s+always)?\s+as\s+identity/gi, '')
+    .replace(/\s+collate\s+[a-zA-Z0-9_]+/gi, '')
+    .replace(/\s+unsigned\b/gi, '')
+    .replace(/\s+zerofill\b/gi, '')
+    .replace(/\s+character\s+set\s+[a-zA-Z0-9_]+/gi, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function extractLeadingIdentifier(value: string): { identifier: string; rest: string } | undefined {
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return undefined;
+  }
+
+  const firstChar = trimmed[0];
+  if (firstChar === '[') {
+    const end = trimmed.indexOf(']');
+    if (end === -1) {
+      return undefined;
+    }
+
+    return {
+      identifier: trimmed.slice(0, end + 1),
+      rest: trimmed.slice(end + 1).trim()
+    };
+  }
+
+  if (firstChar === '`' || firstChar === '"') {
+    const end = trimmed.indexOf(firstChar, 1);
+    if (end === -1) {
+      return undefined;
+    }
+
+    return {
+      identifier: trimmed.slice(0, end + 1),
+      rest: trimmed.slice(end + 1).trim()
+    };
+  }
+
+  const match = trimmed.match(/^([^\s]+)\s*(.*)$/);
+  if (!match) {
+    return undefined;
+  }
+
+  return {
+    identifier: match[1],
+    rest: match[2].trim()
+  };
+}
+
+function splitTopLevelTokens(value: string): string[] {
+  const tokens: string[] = [];
+  let current = '';
+  let parenDepth = 0;
+  let bracketDepth = 0;
+  let quote: '"' | "'" | '`' | null = null;
+
+  for (let index = 0; index < value.length; index += 1) {
+    const char = value[index];
+
+    if (quote) {
+      current += char;
+      if (char === quote) {
+        quote = null;
+      }
+      continue;
+    }
+
+    if (char === '"' || char === '\'' || char === '`') {
+      quote = char;
+      current += char;
+      continue;
+    }
+
+    if (char === '[') {
+      bracketDepth += 1;
+      current += char;
+      continue;
+    }
+
+    if (char === ']') {
+      bracketDepth = Math.max(0, bracketDepth - 1);
+      current += char;
+      continue;
+    }
+
+    if (char === '(') {
+      parenDepth += 1;
+      current += char;
+      continue;
+    }
+
+    if (char === ')') {
+      parenDepth = Math.max(0, parenDepth - 1);
+      current += char;
+      continue;
+    }
+
+    if (/\s/.test(char) && parenDepth === 0 && bracketDepth === 0) {
+      if (current.trim()) {
+        tokens.push(current.trim());
+      }
+      current = '';
+      continue;
+    }
+
+    current += char;
+  }
+
+  if (current.trim()) {
+    tokens.push(current.trim());
+  }
+
+  return tokens;
+}
+
+function extractColumnType(rest: string): string {
+  const tokens = splitTopLevelTokens(rest);
+  const typeTokens: string[] = [];
+  const stopWords = new Set([
+    'not',
+    'null',
+    'default',
+    'constraint',
+    'primary',
+    'unique',
+    'references',
+    'check',
+    'collate',
+    'generated',
+    'identity',
+    'auto_increment',
+    'comment',
+    'invisible',
+    'visible',
+    'encode',
+    'compression',
+    'compress',
+    'masking'
+  ]);
+
+  for (const token of tokens) {
+    const normalized = token.toLowerCase();
+    if (stopWords.has(normalized)) {
+      break;
+    }
+
+    typeTokens.push(token);
+  }
+
+  return normalizeTypeName(typeTokens.join(' '));
 }
 
 function parseColumn(line: string, primaryKeys: Set<string>): ColumnDefinition | undefined {
@@ -120,15 +283,17 @@ function parseColumn(line: string, primaryKeys: Set<string>): ColumnDefinition |
     return undefined;
   }
 
-  const match = cleaned.match(
-    /^([`"\[\]\w$#.]+)\s+([a-zA-Z][a-zA-Z0-9_]*(?:\s+[a-zA-Z][a-zA-Z0-9_]*)*(?:\s*\([^)]*\))?)/i
-  );
-  if (!match) {
+  const parsed = extractLeadingIdentifier(cleaned);
+  if (!parsed || !parsed.rest) {
     return undefined;
   }
 
-  const name = normalizeIdentifier(match[1]);
-  const typeName = match[2].replace(/\s+/g, ' ').trim();
+  const name = normalizeIdentifier(parsed.identifier);
+  const typeName = extractColumnType(parsed.rest);
+  if (!typeName) {
+    return undefined;
+  }
+
   const nullable = !/\bnot\s+null\b/i.test(cleaned) && !/\bprimary\s+key\b/i.test(cleaned);
   const isPrimaryKey = primaryKeys.has(name) || /\bprimary\s+key\b/i.test(cleaned);
 

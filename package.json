@@ -2,9 +2,17 @@
   "name": "sql-table-to-model-generator",
   "displayName": "SQL Table to Model Generator",
   "description": "Paste SQL Server, MySQL, or Oracle CREATE TABLE scripts and generate C#, TypeScript, JSON, Python, and Java models with naming options.",
-  "version": "0.1.0",
+  "version": "1.0.1",
   "publisher": "kenzi-ai",
   "icon": "images/icon.png",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mousaalsheikh/SQL-Table-to-Model-Generator---VS-Code-Extension.git"
+  },
+  "bugs": {
+    "url": "https://github.com/mousaalsheikh/SQL-Table-to-Model-Generator---VS-Code-Extension/issues"
+  },
+  "homepage": "https://github.com/mousaalsheikh/SQL-Table-to-Model-Generator---VS-Code-Extension#readme",
   "license": "MIT",
   "keywords": [
     "sql",
@@ -29,7 +37,6 @@
     "vscode": "^1.90.0"
   },
   "activationEvents": [
-    "onStartupFinished",
     "onCommand:sqlModelForge.generateModels",
     "onLanguage:sql",
     "onView:sqlModelForge.startView"
