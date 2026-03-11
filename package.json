@@ -1,0 +1,105 @@
+{
+  "name": "sql-table-to-model-generator",
+  "displayName": "SQL Table to Model Generator",
+  "description": "Paste SQL Server, MySQL, or Oracle CREATE TABLE scripts and generate C#, TypeScript, JSON, Python, and Java models with naming options.",
+  "version": "0.1.0",
+  "publisher": "kenzi-ai",
+  "icon": "images/icon.png",
+  "license": "MIT",
+  "keywords": [
+    "sql",
+    "sql server",
+    "mysql",
+    "oracle",
+    "ddl",
+    "model",
+    "class",
+    "csharp",
+    "typescript",
+    "python",
+    "java",
+    "json",
+    "schema"
+  ],
+  "categories": [
+    "Programming Languages",
+    "Other"
+  ],
+  "engines": {
+    "vscode": "^1.90.0"
+  },
+  "activationEvents": [
+    "onStartupFinished",
+    "onCommand:sqlModelForge.generateModels",
+    "onLanguage:sql",
+    "onView:sqlModelForge.startView"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "sqlModelForge.generateModels",
+        "title": "SQL Table to Model Generator: Generate Models",
+        "category": "SQL Table to Model Generator"
+      }
+    ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "sqlModelForge",
+          "title": "SQL Model Generator",
+          "icon": "images/activity-bar.svg"
+        }
+      ]
+    },
+    "views": {
+      "sqlModelForge": [
+        {
+          "id": "sqlModelForge.startView",
+          "name": "Generator"
+        }
+      ]
+    },
+    "viewsWelcome": [
+      {
+        "view": "sqlModelForge.startView",
+        "contents": "Open the SQL model generator from the sidebar item below.\n\n[Open Generator](command:sqlModelForge.generateModels)"
+      }
+    ],
+    "menus": {
+      "editor/context": [
+        {
+          "command": "sqlModelForge.generateModels",
+          "when": "editorTextFocus",
+          "group": "navigation"
+        }
+      ],
+      "editor/title": [
+        {
+          "command": "sqlModelForge.generateModels",
+          "when": "editorLangId == sql",
+          "group": "navigation"
+        }
+      ],
+      "view/title": [
+        {
+          "command": "sqlModelForge.generateModels",
+          "when": "view == sqlModelForge.startView",
+          "group": "navigation"
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "build": "tsc -p ./",
+    "watch": "tsc -w -p ./",
+    "package": "vsce package",
+    "publish:marketplace": "vsce publish"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.10",
+    "@types/vscode": "^1.90.0",
+    "@vscode/vsce": "^3.6.2",
+    "typescript": "^5.8.2"
+  }
+}
